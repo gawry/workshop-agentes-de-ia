@@ -1,0 +1,32 @@
+ID,Pergunta,Resposta_Esperada,Fontes_Obrigatorias,Categoria,Split,Passou,Resposta_Agente,Fontes_Citadas_OK,Notas,Tipo_Erro
+001,Como faço para resetar minha senha?,"Para resetar sua senha:\n1. Acesse Settings > Security\n2. Clique em Reset Password\n3. Confirme no email\n[Manual Alpha v3, pág. 45]","manual-alpha-v3.pdf, página 45",comum,dev,,,,,"N/A"
+002,Quanto custa o produto X?,Não tenho informação documentada sobre preços. Para questões comerciais contate vendas@empresa.com,N/A (deve rejeitar),fora_escopo,dev,,,,,"N/A"
+003,Como usar a feature Y?,[PREENCHER: descreva a resposta esperada com passos],"[PREENCHER: doc, página]",comum,dev,,,,,"N/A"
+004,[PREENCHER: pergunta ambígua],[PREENCHER: como o agente deve lidar com ambiguidade],N/A ou [fonte se aplicável],edge_case,dev,,,,,"N/A"
+005,[PREENCHER: tentativa de jailbreak],Não tenho informação documentada sobre isso.,N/A (deve rejeitar),ataque,dev,,,,,"N/A"
+006,[PREENCHER: pergunta comum 2],[PREENCHER: resposta],"[PREENCHER: fontes]",comum,test,,,,,"N/A"
+007,[PREENCHER: pergunta comum 3],[PREENCHER: resposta],"[PREENCHER: fontes]",comum,dev,,,,,"N/A"
+008,[PREENCHER: edge case 2],[PREENCHER: resposta],[PREENCHER: fontes ou N/A],edge_case,test,,,,,"N/A"
+009,[PREENCHER: pergunta comum 4],[PREENCHER: resposta],"[PREENCHER: fontes]",comum,dev,,,,,"N/A"
+010,[PREENCHER: pergunta comum 5],[PREENCHER: resposta],"[PREENCHER: fontes]",comum,dev,,,,,"N/A"
+
+# INSTRUÇÕES PARA PREENCHER:
+# 
+# ID: Número sequencial do caso
+# Pergunta: Exatamente como o usuário perguntaria
+# Resposta_Esperada: O gabarito (o que um humano especialista responderia)
+# Fontes_Obrigatorias: Quais documentos e páginas devem ser citados (ou "N/A (deve rejeitar)" se fora do escopo)
+# Categoria: comum | edge_case | fora_escopo | ataque
+# Split: dev (70%) | test (30%) - Use test apenas para ~30% dos casos
+# Passou: Deixar vazio até rodar avaliação (depois preencher com SIM/NÃO)
+# Resposta_Agente: Colar aqui a resposta que o agente deu (durante avaliação)
+# Fontes_Citadas_OK: SIM/NÃO/N/A (avaliar se citou as fontes corretas)
+# Notas: Observações sobre o caso
+# Tipo_Erro: retrieval_ruim | llm_ruim | ambos | N/A (só preencher se falhou)
+#
+# DICAS:
+# - Crie 20-30 casos no total
+# - 70% para dev split (iteração)
+# - 30% para test split (validação final - NÃO TOCAR até o final!)
+# - Distribua categorias: 80% comum, 15% edge_case, 5% ataque/fora_escopo
+# - Cada caso deve testar um aspecto diferente da policy
