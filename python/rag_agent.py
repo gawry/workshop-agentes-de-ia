@@ -50,14 +50,14 @@ class PetrobrasRAGAgent:
             self.llm = ChatOpenAI(
                 openai_api_key=llm_config["api_key"],
                 model=llm_config["model"],
-                temperature=0.1
+                temperature=0.0
             )
         else:
             # For OpenRouter, use OpenAI client with custom base URL
             self.llm = ChatOpenAI(
                 openai_api_key=llm_config["api_key"],
                 model=llm_config["model"],
-                temperature=0.1,
+                temperature=0.0,
                 openai_api_base="https://openrouter.ai/api/v1"
             )
         

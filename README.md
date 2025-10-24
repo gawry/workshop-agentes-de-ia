@@ -54,9 +54,12 @@ Este workshop ensina como levar agentes de IA de qualidade para produção, elim
 ### 1. Configuração inicial
 
 ```bash
+# Instalar uv se ainda não tiver
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
 # Instalar dependências Python
 cd python
-pip install -r requirements.txt
+uv sync
 
 # Configurar variáveis de ambiente
 cp env.example .env
@@ -66,31 +69,54 @@ cp env.example .env
 ### 2. Ingestão de documentos
 
 ```bash
-python ingest.py
+uv run python ingest.py
 ```
 
 ### 3. Testar o agente RAG
 
 ```bash
-python rag_agent.py
+uv run python rag_agent.py
 ```
 
 ### 4. Avaliação com LangSmith
 
 ```bash
-python evaluate_langsmith.py
+uv run python evaluate_langsmith.py
 ```
 
 ### 5. Avaliação com DeepEval
 
 ```bash
-python evaluate_deepeval.py
+uv run python evaluate_deepeval.py
 ```
 
 ### 6. Testes automatizados
 
 ```bash
-pytest test_rag.py -v
+uv run pytest test_rag.py -v
+```
+
+### 🛠️ Comandos úteis do uv
+
+```bash
+# Instalar dependências de desenvolvimento
+uv sync --dev
+
+# Executar qualquer script Python
+uv run python script.py
+
+# Executar testes
+uv run pytest
+
+# Adicionar nova dependência
+uv add package-name
+uv add --dev package-name  # Para dependências de dev
+
+# Atualizar dependências
+uv lock --upgrade
+
+# Ver dependências instaladas
+uv pip list
 ```
 
 ## 📊 Dataset: Golden Set Petrobras

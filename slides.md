@@ -257,7 +257,7 @@ graph TD
 layout: two-cols
 ---
 
-# Embeddings: A Matemática da Semântica
+# Embeddings: Semantic Math
 
 <v-clicks>
 
@@ -1909,9 +1909,9 @@ Frases similares ficam "próximas" no espaço vetorial:
 ```mermaid {scale: 0.65}
 graph TB
     A[Documento Original] --> B[Chunking]
-    B --> C[Chunk 1:<br/>500 tokens]
-    B --> D[Chunk 2:<br/>500 tokens]
-    B --> E[Chunk 3:<br/>500 tokens]
+    B --> C[Chunk 1:<br/>1000 tokens]
+    B --> D[Chunk 2:<br/>1000 tokens]
+    B --> E[Chunk 3:<br/>1000 tokens]
     
     C --> F[Embedding Model]
     D --> F
@@ -1948,7 +1948,7 @@ layout: default
   - ✅ Busca mais precisa
   - ❌ Perde contexto
 
-- **Médio (500-700 tokens)**
+- **Médio (800-1200 tokens)**
   - ✅ Bom balanço
   - ✅ Recomendado para maioria
 
@@ -2023,8 +2023,8 @@ layout: two-cols
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 splitter = RecursiveCharacterTextSplitter(
-    chunk_size=500,
-    chunk_overlap=50,
+    chunk_size=1000,
+    chunk_overlap=200,
     separators=["\n\n", "\n", ". ", " ", ""]
 )
 ```
@@ -2407,8 +2407,8 @@ layout: two-cols
 4. Upload dos PDFs/documentos
 5. Configurar:
    - "Recursive Character Text Splitter"
-   - Chunk size: **500 tokens**
-   - Overlap: **50 tokens**
+   - Chunk size: **1000 tokens**
+   - Overlap: **200 tokens**
    - Embedding model: **text-embedding-3-small**
 5. Processar e indexar
 
@@ -2864,15 +2864,17 @@ layout: default
 
 <v-clicks>
 
-## 1. Acurácia
-Resposta correta vs. gabarito?
+### 1. Faithfulness
+Resposta é fiel ao contexto recuperado?
 
-$$\text{Accuracy} = \frac{\text{Corretas}}{\text{Total}}$$
+$$\text{Faithfulness} = \frac{\text{Afirmações suportadas}}{\text{Total de afirmações}}$$
 
-## 2. Citação Correta
-Fontes esperadas foram citadas?
+### 2. Answer Relevancy
+Resposta é relevante para a pergunta?
 
-$$\text{Citation} = \frac{\text{Com fonte}}{\text{Deveria ter}}$$
+$$\text{Relevancy} = \frac{1}{N}\sum_{i=1}^{N}\text{sim}(q, q_i)$$
+
+<div class="text-xs mt-2 opacity-75">Medido por similaridade semântica</div>
 
 </v-clicks>
 
@@ -2882,15 +2884,15 @@ $$\text{Citation} = \frac{\text{Com fonte}}{\text{Deveria ter}}$$
 
 <v-clicks>
 
-## 3. Hallucination Rate
-Inventou informação não presente nas fontes?
+### 3. Context Precision
+Chunks recuperados são relevantes?
 
-$$\text{Halluc.} = \frac{\text{Alucinações}}{\text{Total}}$$
+$$\text{Precision} = \frac{\text{Chunks relevantes}}{\text{Total recuperado}}$$
 
-## 4. Rejection Rate
-Quantos "não sei" (esperados vs. reais)?
+### 4. Context Recall
+Toda informação necessária foi recuperada?
 
-$$\text{Rejection} = \frac{\text{Rejeitadas}}{\text{Total}}$$
+$$\text{Recall} = \frac{\text{Info recuperada}}{\text{Info necessária}}$$
 
 </v-clicks>
 
@@ -2901,7 +2903,7 @@ $$\text{Rejection} = \frac{\text{Rejeitadas}}{\text{Total}}$$
 <v-click>
 
 <div class="mt-6 p-4 bg-blue-100 dark:bg-blue-900 rounded">
-🎯 <strong>Meta típica:</strong> Acurácia >85%, Hallucination <5%, Rejection balanceado
+🎯 <strong>Meta típica:</strong> Faithfulness >0.9, Answer Relevancy >0.85, Context Precision >0.8, Context Recall >0.85
 </div>
 
 </v-click>
@@ -3310,16 +3312,16 @@ layout: default
 
 <div class="text-sm">
 
-| Feature | BLEU | LangSmith | DeepEval |
-|---------|------|-----------|----------|
-| **Tipo** | Métrica sintática | Plataforma completa | Framework de testing |
-| **Setup** | ⚡ Simples | 🔧 Requer conta | ⚡ Simples (pip install) |
-| **Custo** | 🆓 Grátis | 💰 Freemium | 🆓 Open source |
-| **LLM-as-judge** | ❌ Não | ✅ Sim | ✅ Sim |
-| **Tracing** | ❌ Não | ✅✅ Excelente | ⚠️ Básico |
-| **Datasets** | ❌ Não | ✅ Gerenciamento | ✅ Sim |
-| **CI/CD** | ✅ Fácil | ✅ API | ✅✅ Pytest |
-| **Prod Monitoring** | ❌ Não | ✅✅ Dashboard | ❌ Não |
+| Feature | LangSmith | DeepEval |
+|---------|------------|----------|
+| **Tipo** |  Plataforma completa | Framework de testing |
+| **Setup** | 🔧 Requer conta | ⚡ Simples (pip install) |
+| **Custo** | 💰 Freemium | 🆓 Open source |
+| **LLM-as-judge** | ✅ Sim | ✅ Sim |
+| **Tracing** |  ✅✅ Excelente | ⚠️ Básico |
+| **Datasets** | ✅ Gerenciamento | ✅ Sim |
+| **CI/CD** |  ✅ API | ✅✅ Pytest |
+| **Prod Monitoring** |  ✅✅ Dashboard | ❌ Não |
 
 </div>
 
@@ -3467,11 +3469,13 @@ graph LR
 ```
 
 ---
-layout: two-cols
+layout: default
 ---
 
-# Knobs para Ajustar
+# O que Ajustar
 
+<div class="grid grid-cols-2 gap-4">
+<div>
 <v-clicks>
 
 ## 1. Temperatura
@@ -3487,9 +3491,9 @@ Quase sempre **0.0-0.2** em produção
 - Ajustar tom e formato
 
 </v-clicks>
+</div>
 
-::right::
-
+<div>
 <v-clicks>
 
 ## 4. Chunk Size e Overlap
@@ -3510,7 +3514,7 @@ Quase sempre **0.0-0.2** em produção
 </div>
 
 </v-click>
-
+</div></div>
 ---
 layout: default
 ---
@@ -3688,40 +3692,45 @@ layout: default
 </div>
 
 ---
-layout: two-cols
+layout: default
 ---
 
 # Monitoramento em Produção
 
+
+<div class="grid grid-cols-2 gap-4">
+<div>
 <v-clicks>
 
-## 👤 User Feedback
+### 👤 User Feedback
 
 - Thumbs up/down
 - Razões de insatisfação
 - Feature requests
 
-## 📊 Métricas Operacionais
+### 📊 Métricas Operacionais
 
-- **Rejection rate**: % de "não sei"
 - **Latência**: p50, p95, p99
 - **Custo por request**: tokens usados
 - **Error rate**: falhas técnicas
+- **Throughput**: requests por minuto
+
+### 📈 Métricas de Qualidade
+
+- **Faithfulness**: amostra aleatória semanal
+- **Answer Relevancy**: correlação com feedback
+- **Rejection Precision**: rejeições corretas vs. incorretas
+- **Citation Rate**: % respostas com fontes
 
 </v-clicks>
-
-::right::
-
+</div>
+<div>
 <v-clicks>
 
 ## 🔔 Alertas
 
 ```yaml
 alerts:
-  - metric: rejection_rate
-    threshold: > 30%
-    action: investigate
-    
   - metric: latency_p95
     threshold: > 5s
     action: scale_up
@@ -3729,6 +3738,14 @@ alerts:
   - metric: error_rate
     threshold: > 5%
     action: rollback
+  
+  - metric: faithfulness_sample
+    threshold: < 0.85
+    action: review_prompt
+    
+  - metric: rejection_rate
+    threshold: > 30%
+    action: investigate
     
   - metric: negative_feedback
     threshold: > 20%
@@ -3736,7 +3753,8 @@ alerts:
 ```
 
 </v-clicks>
-
+</div>
+</div>
 ---
 layout: default
 ---
@@ -3891,11 +3909,12 @@ layout: default
 
 <div class="p-6 bg-green-100 dark:bg-green-900 rounded">
 
-### ✅ Resultados Finais
-- **Acurácia Dev:** 87%
-- **Acurácia Test:** 89%
-- **Hallucination:** 3%
-- **Rejection (esperado):** 15%
+### ✅ Resultados Finais (esperados)
+- **Faithfulness Dev:** 0.92
+- **Faithfulness Test:** 0.91
+- **Answer Relevancy:** 0.88
+- **Context Precision:** 0.85
+- **Context Recall:** 0.87
 
 </div>
 
@@ -3905,7 +3924,8 @@ layout: default
 - **Temperatura:** 0.0
 - **Top-K:** 5
 - **Similarity threshold:** 0.72
-- **Chunk size:** 500 tokens
+- **Chunk size:** 1000 tokens
+- **Chunk overlap:** 200 tokens
 
 </div>
 
