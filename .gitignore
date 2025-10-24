@@ -5,3 +5,7 @@ dist
 .vite-inspect
 .remote-assets
 components.d.ts
+.env
+chroma_db/
+*.pyc
+__pycache__/

@@ -4,10 +4,11 @@ Loads Petrobras reports into Chroma DB for vector search.
 """
 import os
 from pathlib import Path
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import MarkdownHeaderTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 from langchain_chroma import Chroma
-from langchain.schema import Document
+from langchain_core.documents import Document
 from config import (
     CHROMA_DB_PATH, 
     RELATORIO_FINANCEIRO, 
@@ -39,35 +40,63 @@ def create_documents():
     # Load administration report  
     admin_content = load_document(RELATORIO_ADMINISTRACAO, "Administration Report")
     
-    # Create documents with metadata
-    documents = [
-        Document(
-            page_content=financial_content,
-            metadata={"source": "relatorio-financeiro.txt", "type": "financial"}
-        ),
-        Document(
-            page_content=admin_content,
-            metadata={"source": "Relatorio-da-administracao.txt", "type": "administrative"}
-        )
-    ]
-    
     # Split documents into chunks
     print("✂️ Splitting documents into chunks...")
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+        ("###", "Header 3"),
+    ]
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on, strip_headers=False
+    )
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=CHUNK_SIZE,
-        chunk_overlap=CHUNK_OVERLAP,
-        length_function=len,
-        separators=["\n\n", "\n", ".", "!", "?", ",", " ", ""]
+        chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP
     )
     
-    chunks = text_splitter.split_documents(documents)
-    print(f"📦 Created {len(chunks)} chunks")
+    all_chunks = []
+    
+    # Process financial report
+    print("📊 Processing financial report...")
+    financial_doc = Document(
+        page_content=financial_content,
+        metadata={"source": "relatorio-financeiro.txt", "type": "financial"}
+    )
+    
+    # First split by markdown headers to preserve structure
+    financial_header_splits = markdown_splitter.split_text(financial_content)
+    # Add source metadata to each header split
+    for split in financial_header_splits:
+        split.metadata.update(financial_doc.metadata)
+    # The split_text method returns Document objects, so we can use them directly
+    financial_chunks = text_splitter.split_documents(financial_header_splits)
+    all_chunks.extend(financial_chunks)
+    print(f"   Created {len(financial_chunks)} chunks from financial report")
+    
+    # Process administration report
+    print("📋 Processing administration report...")
+    admin_doc = Document(
+        page_content=admin_content,
+        metadata={"source": "Relatorio-da-administracao.txt", "type": "administrative"}
+    )
+    
+    # First split by markdown headers to preserve structure
+    admin_header_splits = markdown_splitter.split_text(admin_content)
+    # Add source metadata to each header split
+    for split in admin_header_splits:
+        split.metadata.update(admin_doc.metadata)
+    # The split_text method returns Document objects, so we can use them directly
+    admin_chunks = text_splitter.split_documents(admin_header_splits)
+    all_chunks.extend(admin_chunks)
+    print(f"   Created {len(admin_chunks)} chunks from administration report")
+    
+    print(f"📦 Total chunks created: {len(all_chunks)}")
     
     # Add chunk index to metadata
-    for i, chunk in enumerate(chunks):
+    for i, chunk in enumerate(all_chunks):
         chunk.metadata["chunk_index"] = i
     
-    return chunks
+    return all_chunks
 
 def create_embeddings_and_store(chunks):
     """Create embeddings and store in Chroma DB."""
@@ -106,9 +135,6 @@ def create_embeddings_and_store(chunks):
         collection_name="petrobras_docs"
     )
     
-    # Persist to disk
-    vectorstore.persist()
-    
     print(f"✅ Chroma DB created with {len(chunks)} documents")
     print(f"📁 Database location: {CHROMA_DB_PATH}")
     
@@ -128,7 +154,7 @@ def test_retrieval(vectorstore):
         print(f"\n❓ Query: {query}")
         docs = vectorstore.similarity_search(query, k=3)
         for i, doc in enumerate(docs, 1):
-            print(f"  {i}. Source: {doc.metadata['source']}")
+            print(f"  {i}. Source: {doc.metadata}")
             print(f"     Preview: {doc.page_content[:100]}...")
             print()
 

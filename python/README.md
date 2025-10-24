@@ -15,7 +15,7 @@ Este projeto demonstra como implementar e avaliar um sistema RAG (Retrieval-Augm
 
 ```
 python/
-├── requirements.txt          # Dependências Python
+├── pyproject.toml           # Configuração do projeto e dependências
 ├── env.example              # Template para variáveis de ambiente
 ├── README.md                # Este arquivo
 ├── config.py                # Configuração centralizada
@@ -33,7 +33,15 @@ python/
 
 ```bash
 cd python
-pip install -r requirements.txt
+
+# Instalar uv se ainda não tiver
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Instalar dependências com uv
+uv sync
+
+# Ou instalar apenas dependências de produção
+uv sync --no-dev
 ```
 
 ### 2. Configurar Variáveis de Ambiente
@@ -58,7 +66,7 @@ nano .env
 ### 3. Validar Configuração
 
 ```bash
-python config.py
+uv run python config.py
 ```
 
 ## 📊 Uso do Sistema
@@ -68,7 +76,7 @@ python config.py
 Primeiro, carregue os documentos da Petrobras no Chroma DB:
 
 ```bash
-python ingest.py
+uv run python ingest.py
 ```
 
 **O que acontece:**
@@ -81,7 +89,7 @@ python ingest.py
 ### 2. Testar Agente RAG
 
 ```bash
-python rag_agent.py
+uv run python rag_agent.py
 ```
 
 **Funcionalidades:**
@@ -96,7 +104,7 @@ python rag_agent.py
 ### 3. Avaliação com LangSmith
 
 ```bash
-python evaluate_langsmith.py
+uv run python evaluate_langsmith.py
 ```
 
 **Métricas avaliadas:**
@@ -112,7 +120,7 @@ python evaluate_langsmith.py
 ### 4. Avaliação com DeepEval
 
 ```bash
-python evaluate_deepeval.py
+uv run python evaluate_deepeval.py
 ```
 
 **Métricas avaliadas:**
@@ -130,13 +138,16 @@ python evaluate_deepeval.py
 
 ```bash
 # Executar todos os testes
-pytest test_rag.py -v
+uv run pytest test_rag.py -v
 
 # Executar apenas testes básicos
-pytest test_rag.py::test_rag_agent_basic_functionality -v
+uv run pytest test_rag.py::test_rag_agent_basic_functionality -v
 
 # Executar com relatório detalhado
-pytest test_rag.py -v --tb=short
+uv run pytest test_rag.py -v --tb=short
+
+# Executar com cobertura
+uv run pytest test_rag.py --cov=. --cov-report=html
 ```
 
 **Tipos de teste:**
@@ -185,6 +196,39 @@ No primeiro trimestre de 2025, a Petrobras registrou um EBITDA Ajustado de R$ 61
 **LIMITAÇÕES:** [Nenhuma]
 
 **PERÍODO DE REFERÊNCIA:** 1T25
+```
+
+## 🛠️ Comandos de Desenvolvimento
+
+### Comandos uv úteis:
+
+```bash
+# Instalar dependências de desenvolvimento
+uv sync --dev
+
+# Executar scripts Python
+uv run python script.py
+
+# Executar testes
+uv run pytest
+
+# Formatar código
+uv run black .
+uv run isort .
+
+# Linting
+uv run flake8 .
+uv run mypy .
+
+# Atualizar dependências
+uv lock --upgrade
+
+# Ver dependências instaladas
+uv pip list
+
+# Adicionar nova dependência
+uv add package-name
+uv add --dev package-name  # Para dependências de dev
 ```
 
 ## 🔧 Configurações Avançadas
@@ -266,37 +310,37 @@ O projeto usa um dataset real com 40 casos de teste:
 
 1. **Setup rápido** (5 min):
    ```bash
-   pip install -r requirements.txt
+   uv sync
    cp env.example .env
    # Configurar chaves
    ```
 
 2. **Ingestão** (2 min):
    ```bash
-   python ingest.py
+   uv run python ingest.py
    ```
 
 3. **Teste interativo** (5 min):
    ```bash
-   python rag_agent.py
+   uv run python rag_agent.py
    # Fazer perguntas em tempo real
    ```
 
 4. **Avaliação LangSmith** (3 min):
    ```bash
-   python evaluate_langsmith.py
+   uv run python evaluate_langsmith.py
    # Mostrar dashboard
    ```
 
 5. **Avaliação DeepEval** (3 min):
    ```bash
-   python evaluate_deepeval.py
+   uv run python evaluate_deepeval.py
    # Mostrar relatório HTML
    ```
 
 6. **Testes automatizados** (2 min):
    ```bash
-   pytest test_rag.py -v
+   uv run pytest test_rag.py -v
    ```
 
 ### Pontos de Discussão

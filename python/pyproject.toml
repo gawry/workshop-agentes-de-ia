@@ -1,0 +1,167 @@
+[project]
+name = "langsmith-deepeval-demo"
+version = "1.0.0"
+description = "LangSmith & DeepEval RAG Evaluation Demo for Petrobras Financial Analysis"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "Sem Ecstasy", email = "demo@semecstasy.com"},
+]
+keywords = ["rag", "llm", "evaluation", "langsmith", "deepeval", "petrobras", "finance"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Education",
+]
+
+dependencies = [
+    # Core LangChain dependencies
+    "langchain>=0.2.0",
+    "langchain-core>=0.2.0",
+    "langchain-openai>=0.1.0",
+    "langchain-chroma>=0.1.0",
+    "langchain-community>=0.2.0",
+    "langchain-text-splitters>=0.0.1",
+    # LangGraph for advanced agent workflows
+    "langgraph>=0.1.0",
+    # Vector database
+    "chromadb>=0.4.18",
+    # Evaluation frameworks
+    "langsmith>=0.1.0",
+    "deepeval>=0.20.0",
+    # Environment and utilities
+    "python-dotenv>=1.0.0",
+    "pandas>=2.1.4",
+    # Optional: OpenRouter support
+    "openai>=1.3.7",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.3",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "mypy>=1.5.0",
+]
+
+test = [
+    "pytest>=7.4.3",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.11.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/semecstasy/langsmith-deepeval-demo"
+Repository = "https://github.com/semecstasy/langsmith-deepeval-demo"
+Issues = "https://github.com/semecstasy/langsmith-deepeval-demo/issues"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=7.4.3",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "mypy>=1.5.0",
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+  | chroma_db
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["config", "ingest", "rag_agent", "evaluate_langsmith", "evaluate_deepeval", "test_rag"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "langchain.*",
+    "langchain_openai.*",
+    "langchain_chroma.*",
+    "langchain_community.*",
+    "chromadb.*",
+    "langsmith.*",
+    "deepeval.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers --strict-config"
+testpaths = ["."]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+    "*/chroma_db/*",
+    "*/venv/*",
+    "*/env/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]

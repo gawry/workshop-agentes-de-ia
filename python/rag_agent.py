@@ -1,20 +1,29 @@
 """
 RAG Agent implementation for Petrobras Q&A system.
 """
-from typing import Dict, List, Any
-from langchain_openai import ChatOpenAI
+from typing import Dict, List, Any, TypedDict
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_chroma import Chroma
-from langchain_openai import OpenAIEmbeddings
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema.runnable import RunnablePassthrough
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema import Document
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.documents import Document
+from langgraph.graph import StateGraph, END
 from config import (
     CHROMA_DB_PATH, 
     TOP_K_RETRIEVAL, 
     get_llm_config,
     validate_config
 )
+from constants import SYSTEM_PROMPT
+
+class GraphState(TypedDict):
+    """State for the RAG agent graph."""
+    question: str
+    documents: List[Document]
+    answer: str
+    sources: List[str]
+    error: str
 
 class PetrobrasRAGAgent:
     """RAG Agent for Petrobras financial and administrative questions."""
@@ -25,6 +34,7 @@ class PetrobrasRAGAgent:
         self.vectorstore = None
         self.retriever = None
         self.chain = None
+        self.graph = None
         self._setup()
     
     def _setup(self):
@@ -71,62 +81,10 @@ class PetrobrasRAGAgent:
         )
         
         # Create prompt template with comprehensive system prompt
-        system_prompt = """Você é um **analista financeiro especializado** trabalhando para análise de relatórios da **Petrobras**.
-
-Seu objetivo é **analisar e responder perguntas sobre os relatórios financeiros da Petrobras, fornecendo insights baseados exclusivamente nos documentos oficiais disponíveis**.
-
-**Domínio de conhecimento:**
-- Relatórios de Desempenho Financeiro da Petrobras (1T25)
-- Relatório da Administração da Petrobras (2024)
-- Demonstrações financeiras consolidadas
-- Indicadores de performance operacional e financeira
-- Estratégia e planos de negócios da Petrobras
-- Métricas de ESG e sustentabilidade
-
-**Limitações importantes:**
-- Você tem acesso SOMENTE aos relatórios da Petrobras fornecidos no contexto
-- Você NÃO tem acesso à internet ou informações externas sobre a Petrobras
-- Suas respostas devem ser baseadas EXCLUSIVAMENTE nos relatórios oficiais recuperados
-- NÃO forneça conselhos de investimento ou recomendações de compra/venda de ações
-
-**PROCESSO OBRIGATÓRIO:**
-1. **Buscar contexto relevante** - Use o sistema de recuperação para encontrar seções pertinentes
-2. **Analisar contexto recuperado** - Leia CUIDADOSAMENTE todos os trechos recuperados
-3. **Construir resposta fundamentada** - Use APENAS informação presente nos relatórios oficiais
-4. **Adicionar citações obrigatórias** - TODA afirmação factual DEVE ter citação específica
-
-**REGRAS DE CITAÇÃO:**
-- Formato obrigatório: **[Nome do Relatório, Seção/Página]**
-- Cada fato, número, métrica ou declaração DEVE incluir citação da fonte
-- Sempre inclua o período de referência quando disponível
-
-**FORMATO DE SAÍDA OBRIGATÓRIO:**
-**RESPOSTA:**
-[Sua resposta completa aqui, com citações inline [Fonte, Local]]
-
-**FONTES:**
-- Nome completo do relatório 1
-- Nome completo do relatório 2
-
-**CONFIANÇA:** alta|média|baixa
-
-**LIMITAÇÕES:** [Se aplicável: o que não pôde ser respondido e por quê]
-
-**PERÍODO DE REFERÊNCIA:** [Período dos dados (ex: 1T25, 2024, etc.)]
-
-**COMPORTAMENTOS PROIBIDOS:**
-- NUNCA fabricar informação ou inventar números
-- NUNCA fornecer conselhos de investimento
-- NUNCA omitir citações em afirmações factuais
-- NUNCA fazer interpretações não fundamentadas
-
-**CONTEXTO DISPONÍVEL:**
-{context}
-
-**PERGUNTA:** {question}"""
+       
 
         self.prompt = ChatPromptTemplate.from_messages([
-            ("system", system_prompt),
+            ("system", SYSTEM_PROMPT),
             ("human", "{question}")
         ])
         
@@ -137,6 +95,9 @@ Seu objetivo é **analisar e responder perguntas sobre os relatórios financeiro
             | self.llm
             | StrOutputParser()
         )
+        
+        # Create LangGraph workflow
+        self._build_graph()
     
     def _format_docs(self, docs: List[Document]) -> str:
         """Format retrieved documents for the prompt."""
@@ -156,26 +117,34 @@ Seu objetivo é **analisar e responder perguntas sobre os relatórios financeiro
             formatted_docs.append(f"**{report_name}**\n{content}")
         return "\n\n".join(formatted_docs)
     
-    def query(self, question: str) -> Dict[str, Any]:
-        """
-        Query the RAG agent with a question.
+    def _build_graph(self):
+        """Build the LangGraph workflow."""
+        # Define the graph
+        workflow = StateGraph(GraphState)
         
-        Args:
-            question: The question to ask
-            
-        Returns:
-            Dictionary containing answer, sources, and metadata
-        """
+        # Add nodes
+        workflow.add_node("retrieve", self._retrieve_documents)
+        workflow.add_node("generate", self._generate_answer)
+        
+        # Add edges
+        workflow.add_edge("retrieve", "generate")
+        workflow.add_edge("generate", END)
+        
+        # Set entry point
+        workflow.set_entry_point("retrieve")
+        
+        # Compile the graph
+        self.graph = workflow.compile()
+    
+    def _retrieve_documents(self, state: GraphState) -> GraphState:
+        """Retrieve relevant documents for the question."""
         try:
-            # Get answer from RAG chain
-            answer = self.chain.invoke(question)
-            
-            # Get retrieved documents for source tracking
-            retrieved_docs = self.retriever.get_relevant_documents(question)
+            question = state["question"]
+            documents = self.retriever.invoke(question)
             
             # Extract sources with proper report names
             sources = []
-            for doc in retrieved_docs:
+            for doc in documents:
                 source = doc.metadata.get("source", "unknown")
                 
                 # Map source files to proper report names
@@ -189,15 +158,73 @@ Seu objetivo é **analisar e responder perguntas sobre os relatórios financeiro
                 if report_name not in sources:
                     sources.append(report_name)
             
+            state["documents"] = documents
+            state["sources"] = sources
+            state["error"] = ""
+            
+        except Exception as e:
+            state["documents"] = []
+            state["sources"] = []
+            state["error"] = str(e)
+        
+        return state
+    
+    def _generate_answer(self, state: GraphState) -> GraphState:
+        """Generate answer using retrieved documents."""
+        try:
+            if state["error"]:
+                state["answer"] = f"Erro ao recuperar documentos: {state['error']}"
+                return state
+            
+            # Format documents for the prompt
+            context = self._format_docs(state["documents"])
+            question = state["question"]
+            
+            # Generate answer using the chain with proper input format
+            answer = self.chain.invoke(question)
+            
+            state["answer"] = answer
+            state["error"] = ""
+            
+        except Exception as e:
+            state["answer"] = f"Erro ao gerar resposta: {str(e)}"
+            state["error"] = str(e)
+        
+        return state
+    
+    def query(self, question: str) -> Dict[str, Any]:
+        """
+        Query the RAG agent with a question using LangGraph workflow.
+        
+        Args:
+            question: The question to ask
+            
+        Returns:
+            Dictionary containing answer, sources, and metadata
+        """
+        try:
+            # Initialize state
+            initial_state = GraphState(
+                question=question,
+                documents=[],
+                answer="",
+                sources=[],
+                error=""
+            )
+            
+            # Run the graph
+            final_state = self.graph.invoke(initial_state)
+            
             return {
                 "question": question,
-                "answer": answer,
-                "sources": sources,
-                "retrieved_docs": len(retrieved_docs),
+                "answer": final_state["answer"],
+                "sources": final_state["sources"],
+                "retrieved_docs": len(final_state["documents"]),
                 "metadata": {
                     "model": self.llm.model_name if hasattr(self.llm, 'model_name') else "unknown",
                     "retrieval_k": TOP_K_RETRIEVAL
-                }
+                },
+                "error": final_state.get("error", "")
             }
             
         except Exception as e:
@@ -245,7 +272,7 @@ def main():
         print("\n💬 Interactive mode (type 'quit' to exit):")
         while True:
             question = input("\n❓ Sua pergunta: ").strip()
-            if question.lower() in ['quit', 'exit', 'sair']:
+            if question.lower() in ['q', 'quit', 'exit', 'sair']:
                 break
             
             if question:
