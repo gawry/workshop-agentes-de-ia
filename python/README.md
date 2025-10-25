@@ -238,7 +238,7 @@ uv add --dev package-name  # Para dependências de dev
 **OpenAI (padrão):**
 ```python
 # config.py
-OPENAI_MODEL = "gpt-4"  # ou gpt-3.5-turbo
+OPENAI_MODEL = "gpt-5"  # ou gpt-4.1
 ```
 
 **OpenRouter:**

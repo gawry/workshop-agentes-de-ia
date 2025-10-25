@@ -108,11 +108,14 @@ Se não tem fonte, o agente **NÃO** responde.
 </v-click>
 
 ---
-layout: two-cols
+layout: default
 ---
 
 # Objetivos de Aprendizado
 
+
+<div class="grid grid-cols-2 gap-4">
+<div>
 <v-clicks depth="2">
 
 - 🏗️ **Construir** um agente RAG testável
@@ -124,10 +127,9 @@ layout: two-cols
   - Comportamentos proibidos documentados
 
 </v-clicks>
+</div>
 
-::right::
-  
-<div class="mt-28"></div>
+<div>
 <v-clicks depth="2">
 
 - 📊 **Criar** processo de avaliação contínua
@@ -139,7 +141,8 @@ layout: two-cols
   - Monitoramento em produção
 
 </v-clicks>
-
+</div>
+</div>
 ---
 layout: section
 ---
@@ -325,6 +328,7 @@ def cosine_similarity(vec1, vec2):
 # 0.0 = diferentes
 # 1.0 = idênticos
 ```
+
 </v-click>
 
 <!-- 
@@ -784,7 +788,7 @@ layout: default
 # Temperatura baixa = Determinístico
 response = llm.generate(
     prompt="Qual a capital do Brasil?",
-    temperature=0.0
+    temperature=0.1
 )
 # → "Brasília" (sempre)
 
@@ -2435,7 +2439,7 @@ graph LR
     B --> C[Vector DB<br/>Busca Top-K]
     C --> D[Documentos<br/>Recuperados]
     D --> H[System Prompt +<br/>Contexto + Query]
-    H --> I[LLM<br/>temperature=0.0]
+    H --> I[LLM<br/>temperature=0.1]
     I --> J[Validação<br/>de Output]
     J --> K{Tem fonte?}
     K -->|Sim| L[Resposta Final]
@@ -2784,7 +2788,7 @@ layout: default
 embeddings = OpenAIEmbeddings()
 llm = ChatOpenAI(
   model="chat-gp5-5",
-  temperature=0.0
+  temperature=0.1
 )
 
 vectorstore = Chroma(embedding_function=embeddings)
